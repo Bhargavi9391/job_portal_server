@@ -5,12 +5,29 @@ const bcrypt = require('bcryptjs');
 const cors = require('cors');
 
 const app = express();
+const Job = require('./models/Job');
 
-// Middleware
-app.use(cors());
+
+// ✅ CORS setup
+const allowedOrigins = [
+  "http://localhost:3000"
+  // "https://job-portal-front-o561.onrender.com"
+];
+
+app.use(cors({
+  origin: function (origin, callback) {
+    if (!origin || allowedOrigins.includes(origin)) {
+      callback(null, true);
+    } else {
+      callback(new Error("Not allowed by CORS"));
+    }
+  },
+}));
+
+// ✅ Middleware
 app.use(express.json());
 
-// MongoDB connection
+// ✅ MongoDB connection
 mongoose.connect(process.env.MONGO_URI, {
   useNewUrlParser: true,
   useUnifiedTopology: true,
@@ -18,7 +35,7 @@ mongoose.connect(process.env.MONGO_URI, {
   .then(() => console.log('✅ Connected to MongoDB'))
   .catch(err => console.error('❌ Failed to connect to MongoDB:', err));
 
-// MongoDB User Schema
+// ✅ MongoDB User Schema
 const userSchema = new mongoose.Schema({
   name: { type: String, required: true },
   email: { type: String, required: true, unique: true },
@@ -27,7 +44,7 @@ const userSchema = new mongoose.Schema({
 
 const User = mongoose.model('User', userSchema);
 
-// Registration Route
+// ✅ Registration Route
 app.post('/register', async (req, res) => {
   const { name, email, password } = req.body;
 
@@ -51,7 +68,7 @@ app.post('/register', async (req, res) => {
   }
 });
 
-// Login Route
+// ✅ Login Route
 app.post('/login', async (req, res) => {
   const { email, password } = req.body;
 
@@ -62,7 +79,7 @@ app.post('/login', async (req, res) => {
   try {
     const user = await User.findOne({ email });
     if (!user) {
-      return res.status(400).json({ message: 'User not found.' });
+      return res.status(404).json({ message: 'User not found.' });
     }
 
     const isPasswordValid = await bcrypt.compare(password, user.password);
@@ -75,8 +92,29 @@ app.post('/login', async (req, res) => {
     res.status(500).json({ message: 'Error logging in user.' });
   }
 });
+// Post job route
+app.post('/jobs', async (req, res) => {
+  try {
+    const job = new Job(req.body);
+    await job.save();
+    res.status(201).json({ message: 'Job posted successfully!' });
+  } catch (error) {
+    res.status(500).json({ message: 'Error posting job', error: error.message });
+  }
+});
 
-// Start the server
+// Get all jobs route
+app.get('/jobs', async (req, res) => {
+  try {
+    const jobs = await Job.find({});
+    res.json(jobs);
+  } catch (error) {
+    res.status(500).json({ message: 'Error fetching jobs', error: error.message });
+  }
+});
+
+
+// ✅ Start the server
 const PORT = process.env.PORT || 10000;
 app.listen(PORT, () => {
   console.log(`🚀 Server running on http://localhost:${PORT}`);
