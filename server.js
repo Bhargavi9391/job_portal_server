@@ -10,8 +10,8 @@ const Job = require('./models/Job');
 
 // ✅ CORS setup
 const allowedOrigins = [
-  "http://localhost:3000"
-  // "https://job-portal-front-o561.onrender.com"
+ 
+  "https://frontend-jobportal-wt9b.onrender.com"
 ];
 
 app.use(cors({
